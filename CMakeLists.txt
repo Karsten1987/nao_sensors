@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(nao_sensors)
 
-# Tell CMake where to find "FindNAOqi.cmake"
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
 # Find catkin macros and libraries, also other catkin packages.
 find_package(catkin REQUIRED COMPONENTS
   camera_info_manager
@@ -12,16 +9,21 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   image_transport
   nodelet
+  octomap_msgs
   roscpp
   sensor_msgs
-  tf)
+  nao_msgs
+  tf
+  nao_driver
+)
 
 find_package(NAOqi QUIET COMPONENTS
     alcommon
     alvision
     alproxies
     alerror
-    alvalue)
+    alvalue
+)
 
 # deal with the Python code
 catkin_python_setup()
@@ -30,9 +32,12 @@ catkin_python_setup()
 find_package(Boost REQUIRED COMPONENTS thread program_options)
 
 # auto-generate dynamic reconfiguration GUI before catkin_package()
-generate_dynamic_reconfigure_options(cfg/NaoCamera.cfg)
+generate_dynamic_reconfigure_options(cfg/NaoCamera.cfg
+                                     cfg/NaoMicrophone.cfg)
 
-catkin_package(CATKIN_DEPENDS
+if( ${NAOqi_FOUND} AND ${Boost_FOUND} )
+    message(STATUS "NAOqi C++ SDK found; C++ nodes will be built")
+    catkin_package(CATKIN_DEPENDS
                  camera_info_manager
                  diagnostic_updater
                  dynamic_reconfigure
@@ -41,9 +46,8 @@ catkin_package(CATKIN_DEPENDS
                  roscpp
                  tf
                DEPENDS Boost
-               LIBRARIES src/naocamera_nodelet)
+               LIBRARIES naocamera_nodelet)
 
-if( ${NAOqi_FOUND} AND ${Boost_FOUND} )
     include_directories(
         ${catkin_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
@@ -77,17 +81,31 @@ if( ${NAOqi_FOUND} AND ${Boost_FOUND} )
             ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
             LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 
-    # install pluginlib definition for the nodelet
-    install(FILES naocamera_nodelet.xml
-            DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+    # nodelet launch files
     install(FILES launch/nodelet_manager.launch launch/nodelet_standalone.launch launch/nodelet_pipeline.launch
             DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
     ####
 else()
+    catkin_package()
+
     # not set as warning to not update the buildfarms
     message(STATUS "-- Cannot find NAOqi C++ SDK! Set NAOqi_DIR to the SDK prefix to build the C++ nodes.")
     message(STATUS "-- The Python nodes will still be installed and can be run provided NAOqi is in your PYTHONPATH.")
 endif()
 
 add_subdirectory(./src)
+
+# install sensor scripts
+install(PROGRAMS nodes/camera.py
+                 nodes/microphone.py
+                 nodes/octomap.py
+                 nodes/sonar.py
+        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+# install pluginlib definition for the nodelet. In the case the plugin is not compiled
+# this is still useful to not display an error from the package.xml parsing
+# (the plugin is exported there no matter what)
+install(FILES naocamera_nodelet.xml
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

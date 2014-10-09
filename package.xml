@@ -1,6 +1,6 @@
 <package>
   <name>nao_sensors</name>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
 
   <description>
     ROS driver for miscellaneous sensors on NAO.
@@ -36,8 +36,10 @@
   <build_depend>driver_base</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>image_transport</build_depend>
+  <build_depend>nao_driver</build_depend>
   <build_depend>nodelet</build_depend>
   <build_depend>octomap</build_depend>
+  <build_depend>octomap_msgs</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>tf</build_depend>
