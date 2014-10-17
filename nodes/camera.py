@@ -78,8 +78,50 @@ class NaoCam (NaoNode):
         # initialize the parameter server
         self.srv = Server(NaoCameraConfig, self.reconfigure)
 
+        # initial load from param server
+        self.init_config()
+
         # initially load configurations
         self.reconfigure(self.config, 0)
+
+    def init_config( self ):
+        # mandatory configurations to be set
+        self.config['frame_rate'] = rospy.get_param('~frame_rate')
+        self.config['source'] = rospy.get_param('~source')
+        self.config['resolution'] = rospy.get_param('~resolution')
+        self.config['color_space'] = rospy.get_param('~color_space')
+
+        print 'camera source ', self.config['source']
+        print 'camera resolution ' , self.config['resolution']
+
+        # optional for camera frames
+        # top camera with default
+        if rospy.has_param('~camera_top_frame'):
+            self.config['camera_top_frame'] = rospy.get_param('~camera_top_frame')
+        else:
+            self.config['camera_top_frame'] = "/CameraTop_frame"
+        # bottom camera with default
+        if rospy.has_param('~camera_bottom_frame'):
+            self.config['camera_bottom_frame'] = rospy.get_param('~camera_bottom_frame')
+        else:
+            self.config['camera_bottom_frame'] = "/CameraBottom_frame"
+        # depth camera with default
+        if rospy.has_param('~camera_depth_frame'):
+            self.config['camera_depth_frame'] = rospy.get_param('~camera_depth_frame')
+        else:
+            self.config['camera_depth_frame'] = "/DepthCamera_frame"
+
+        #load calibration files
+        if rospy.has_param('~calibration_file_top'):
+            self.config['calibration_file_top'] = rospy.get_param('~calibration_file_top')
+        if rospy.has_param('~calibration_file_bottom'):
+            self.config['calibration_file_bottom'] = rospy.get_param('~calibration_file_bottom')
+
+        if rospy.has_param('~use_ros_time'):
+            self.config['use_ros_time'] = rospy.get_param('~use_ros_time')
+        else:
+            self.config['use_ros_time'] = False
+            
 
     def reconfigure( self, new_config, level ):
         """
